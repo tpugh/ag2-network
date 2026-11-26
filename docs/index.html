@@ -3,37 +3,47 @@
 <head>
 <meta charset="utf-8">
 <title>AG2 Network — Tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jersey+10&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<header><h1>AG2 Network</h1><nav><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a></nav></header>
-<div class="container">
-<div class="card">
-<h2>What is AG2 Network?</h2>
-<p><code>ag2.network</code> turns one or more <code>Agent</code> instances into a <strong>multi-agent network</strong>: a hub-and-spoke topology where a central <code>Hub</code> coordinates channel-based, protocol-driven exchanges between named agents. It is fully opt-in — bare <code>Agent</code> keeps working standalone.</p>
-<p>Adopt it when you need enforceable turn order, a registry of named agents, durable/replayable transcripts, governance, sub-task observability, or distributed deployment.</p>
-</div>
-<div class="card">
-<h2>Mental Model</h2>
-<pre>Hub (registry, audit log, channels, WAL, sweepers)
+<div class="frame">
+  <nav class="topnav">
+    <a href="index.html">Home</a>
+    <a href="quickstart.html">Quick Start</a>
+    <a href="adapters.html">Adapters</a>
+    <a href="distributed.html">Distributed</a>
+  </nav>
+
+  <h1>AG2 Network</h1>
+  <p style="font-size:20px;color:var(--text-primary);max-width:760px;margin:0 0 16px;">AG2's open-source <span style="color:var(--gold);font-weight:700;">multi-agent runtime</span>. Build hubs, register agents, open channels, plug in your own adapters, and add rules.</p>
+  <p style="max-width:720px;">The <code>ag2.network</code> module turns one or more <code>Agent</code> instances into a multi-agent network: a hub-and-spoke topology where a central <code>Hub</code> coordinates channel-based, protocol-driven exchanges between named agents. It is fully opt-in — bare <code>Agent</code> keeps working standalone.</p>
+
+  <div class="card">
+    <h2>Mental Model</h2>
+    <pre>Hub (registry, audit log, channels, WAL, sweepers)
    │  LocalLink (in-process) or WsLink (WebSocket)
    ├── AgentClient alice  (Agent)
    ├── AgentClient bob    (Agent)
    └── HumanClient carol  (human)</pre>
+  </div>
+
+  <div class="card">
+    <h2>Core Concepts</h2>
+    <ul>
+      <li><strong>Hub</strong> — authoritative state.</li>
+      <li><strong>Passport / Resume</strong> — identity and capability claims.</li>
+      <li><strong>Rule</strong> — per-agent governance.</li>
+      <li><strong>AgentClient / HumanClient</strong> — agent/human participants.</li>
+      <li><strong>Channel</strong> — bounded multi-party exchange governed by an adapter.</li>
+      <li><strong>Envelope</strong> — hub-stamped wire record.</li>
+    </ul>
+    <p><a href="quickstart.html">Start the Quick Start →</a></p>
+  </div>
+
+  <div class="footer">AG2 Network tutorial · <a href="https://github.com/tpugh/ag2-network">source</a></div>
 </div>
-<div class="card">
-<h2>Core Concepts</h2>
-<ul>
-<li><strong>Hub</strong> — authoritative state.</li>
-<li><strong>Passport / Resume</strong> — identity and capability claims.</li>
-<li><strong>Rule</strong> — per-agent governance.</li>
-<li><strong>AgentClient / HumanClient</strong> — agent/human participants.</li>
-<li><strong>Channel</strong> — bounded multi-party exchange governed by an adapter.</li>
-<li><strong>Envelope</strong> — hub-stamped wire record.</li>
-</ul>
-<p><a href="quickstart.html">Start the Quick Start →</a></p>
-</div>
-</div>
-<footer>AG2 Network tutorial · <a href="https://github.com/tpugh/ag2-network">source</a></footer>
 </body>
 </html>

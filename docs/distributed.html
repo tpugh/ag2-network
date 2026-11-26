@@ -1,31 +1,38 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Distributed — AG2 Network</title><link rel="stylesheet" href="assets/style.css"></head>
+<head>
+<meta charset="utf-8">
+<title>Distributed — AG2 Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jersey+10&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
 <body>
-<header><h1>AG2 Network</h1><nav><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a></nav></header>
-<div class="container">
-<div class="card">
-<h2>Distributed Deployment</h2>
-<p>Replace <code>LocalLink</code> with <code>WsLink</code>; the hub becomes a WebSocket server.</p>
-<pre># hub server
+<div class="frame">
+  <nav class="topnav"><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a></nav>
+  <h1>Distributed</h1>
+  <div class="card">
+    <p>Replace <code>LocalLink</code> with <code>WsLink</code>; the hub becomes a WebSocket server.</p>
+    <pre># hub server
 import asyncio, contextlib
 from ag2.network import Hub, serve_ws
 from ag2.network.testing import MemoryKnowledgeStore
 hub = await Hub.open(MemoryKnowledgeStore())
 async with serve_ws(hub, "127.0.0.1", 8765, allow_unauthenticated=True) as server:
     await asyncio.Future()  # serve until interrupted</pre>
-<pre># remote agent
+    <pre># remote agent
 from ag2.network import HubClient, WsLink
 hc = HubClient(WsLink("ws://127.0.0.1:8765"))
 await hc.open()
 bob = await hc.register(Agent("bob", prompt="...", config=config))</pre>
-<p>Install: <code>pip install "ag2[network-ws]"</code> (requires <code>websockets</code>).</p>
+    <p>Install: <code>pip install "ag2[network-ws]"</code> (requires <code>websockets</code>).</p>
+  </div>
+  <div class="card">
+    <h2>Auth</h2>
+    <p>Use <code>AuthRegistry([ApiKeyAuth(keys={...})])</code> and pass <code>Passport(auth=AuthBlock(...))</code>. serve_ws refuses NoAuth on non-loopback hosts unless <code>allow_unauthenticated=True</code>.</p>
+  </div>
+  <div class="footer"><a href="index.html">← Home</a></div>
 </div>
-<div class="card">
-<h2>Auth</h2>
-<p>Use <code>AuthRegistry([ApiKeyAuth(keys={...})])</code> and pass <code>Passport(auth=AuthBlock(...))</code>. serve_ws refuses NoAuth on non-loopback hosts unless <code>allow_unauthenticated=True</code>.</p>
-</div>
-</div>
-<footer><a href="index.html">← Home</a></footer>
 </body>
 </html>
