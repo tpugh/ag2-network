@@ -5,18 +5,34 @@
 <title>Lab 1 — First Consulting Channel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jersey+10&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <div class="frame">
   <nav class="topnav"><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a><a href="lab1.html">Lab 1</a><a href="lab2.html">Lab 2</a><a href="lab3.html">Lab 3</a></nav>
   <h1>Lab 1</h1>
-  <p style="color:var(--text-secondary);">First consulting channel — modify the quickstart.</p>
+  <p style="color:var(--text-dim);">First consulting channel — strict 1Q1R with auto-close.</p>
 
   <div class="card">
-    <h2>Objective</h2>
-    <p>Change the quickstart so the respondent's answer is constrained to one word, and verify the channel auto-closes with reason <code>consulting_complete</code>.</p>
+    <h2>Goal</h2>
+    <p>Build the smallest possible AG2 network: one in-process hub, two agents, a <code>consulting</code> channel. Verify the hub auto-closes the channel after the respondent's reply and replay the transcript from the write-ahead log.</p>
+  </div>
+
+  <div class="card">
+    <h2>What you will learn</h2>
+    <ul>
+      <li>How to boot a <code>Hub</code> with a <code>MemoryKnowledgeStore</code>.</li>
+      <li>How <code>hub.register(agent)</code> stamps a hub-side <code>agent_id</code> and returns an <code>AgentClient</code>.</li>
+      <li>How <code>alice.open(type="consulting", target="bob")</code> creates a channel and how the adapter enforces 1-question-1-reply.</li>
+      <li>How the default handler runs <code>Agent.ask</code> and sends the reply.</li>
+      <li>How to replay a channel transcript from the hub's WAL.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>How to apply it</h2>
+    <p>Use the consulting adapter whenever you need a strict request/response: a coordinator asking a specialist a single question, a tool calling an expert agent, or any flow where you want automatic cleanup after one reply. The pattern scales to remote agents by swapping <code>LocalLink</code> for <code>WsLink</code>.</p>
   </div>
 
   <div class="card">
@@ -31,14 +47,18 @@ from common import make_config
 async def main():
     config = make_config()
     hub = await Hub.open(MemoryKnowledgeStore(), ttl_sweep_interval=0)
-    alice = await hub.register(Agent("alice", prompt="Ask: what is 2+2?", config=config))
-    # TODO: make bob answer in exactly one word
-    bob   = await hub.register(Agent("bob", prompt="Answer in one word.", config=config))
+    alice = await hub.register(Agent("alice", prompt="Ask one focused question and stop.", config=config))
+    bob = await hub.register(Agent("bob", prompt="Answer in one short sentence.", config=config))
     channel = await alice.open(type="consulting", target="bob")
-    await channel.send("What is 2+2?", audience=[bob.agent_id])
+    await channel.send("What is the single most important property of a distributed system?", audience=[bob.agent_id])
     close_env = await alice.wait_for_channel_event(channel_id=channel.channel_id,
         predicate=lambda e: e.event_type == EV_CHANNEL_CLOSED, timeout=60.0)
     print("closed:", close_env.event_data.get("reason"))
+    wal = await hub.read_wal(channel.channel_id)
+    for env in wal:
+        if env.event_type == EV_TEXT:
+            speaker = "alice" if env.sender_id == alice.agent_id else "bob"
+            print(f"{speaker}: {env.event_data['text']}")
     await hub.close()
 asyncio.run(main())</pre>
   </div>
@@ -46,15 +66,21 @@ asyncio.run(main())</pre>
   <div class="card">
     <h2>Tasks</h2>
     <ol>
-      <li>Run the starter. Confirm it prints <code>closed: 'consulting_complete'</code>.</li>
-      <li>Change alice's question to something open-ended. Does bob still reply in one word?</li>
-      <li>Add a second <code>channel.send</code> from alice after the close. What happens? (Expect an error — channel is terminal.)</li>
+      <li>Run the starter. Confirm it prints <code>closed: 'consulting_complete'</code> and two <code>EV_TEXT</code> lines.</li>
+      <li>Change alice's question to something open-ended. Does bob still reply in one sentence?</li>
+      <li>Try sending a second <code>channel.send</code> after the close. Observe the error (channel is terminal).</li>
+      <li>Add a third agent and open a consulting channel to it. Compare WAL sizes.</li>
     </ol>
   </div>
 
   <div class="card">
-    <h2>Check your work</h2>
-    <p>Expected: one <code>EV_TEXT</code> from alice, one from bob, then <code>EV_CHANNEL_CLOSED</code>. Replay via <code>hub.read_wal(channel_id)</code>.</p>
+    <h2>Key takeaways</h2>
+    <ul>
+      <li>The <code>Hub</code> is the only authoritative state; clients are thin.</li>
+      <li>A <code>channel_id</code> is the unit of conversation; the WAL is keyed by it.</li>
+      <li>The consulting adapter auto-closes after <code>initiator_sent + respondent_replied</code>.</li>
+      <li>Every envelope is hub-stamped (id, timestamp, sender, audience, type, data).</li>
+    </ul>
   </div>
 
   <div class="footer"><a href="index.html">← Home</a> · <a href="lab2.html">Lab 2 →</a></div>

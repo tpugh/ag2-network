@@ -5,18 +5,34 @@
 <title>Lab 3 — Workflow with Handoff</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jersey+10&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <div class="frame">
   <nav class="topnav"><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a><a href="lab1.html">Lab 1</a><a href="lab2.html">Lab 2</a><a href="lab3.html">Lab 3</a></nav>
   <h1>Lab 3</h1>
-  <p style="color:var(--text-secondary);">Workflow with a TransitionGraph and a Handoff tool.</p>
+  <p style="color:var(--text-dim);">Workflow with a TransitionGraph and a Handoff tool.</p>
 
   <div class="card">
-    <h2>Objective</h2>
-    <p>Build a triage → specialist pipeline where a tool returns <code>Handoff(target=...)</code> to pick the next speaker dynamically.</p>
+    <h2>Goal</h2>
+    <p>Build a triage → specialist pipeline using the <code>workflow</code> adapter. Declare speaker order as data with a <code>TransitionGraph</code>, then add dynamic routing with a <code>Handoff(target=...)</code> tool and terminate with <code>Finish</code>.</p>
+  </div>
+
+  <div class="card">
+    <h2>What you will learn</h2>
+    <ul>
+      <li>How to declare a <code>TransitionGraph</code> (initial speaker, transitions, default target, max turns).</li>
+      <li>How built-in targets work: <code>AgentTarget</code>, <code>TerminateTarget</code>, <code>RoundRobinTarget</code>.</li>
+      <li>How built-in conditions work: <code>Always</code>, <code>FromSpeaker</code>, <code>ToolCalled</code>, <code>ContextEquals</code>.</li>
+      <li>How a tool returning <code>Handoff(target=...)</code> overrides the graph.</li>
+      <li>How <code>Finish(summary=...)</code> terminates the channel.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>How to apply it</h2>
+    <p>Use the workflow adapter to replace classic <code>GroupChat + handoffs</code>. It is ideal for triage/routing, pipelines, and any orchestration where you want the turn order to be inspectable data rather than imperative code.</p>
   </div>
 
   <div class="card">
@@ -24,20 +40,18 @@
     <pre># examples/labs/lab3.py
 import asyncio
 from ag2 import Agent
-from ag2.network import Hub, TransitionGraph, Handoff
+from ag2.network import Hub, TransitionGraph, Handoff, Finish
 from ag2.network.testing import MemoryKnowledgeStore
 from common import make_config
 
 async def main():
     config = make_config()
     hub = await Hub.open(MemoryKnowledgeStore(), ttl_sweep_interval=0)
-    triage = await hub.register(Agent("triage", prompt="Triage the request.", config=config))
-    eng    = await hub.register(Agent("eng", prompt="Engineering specialist.", config=config))
-    graph = TransitionGraph(initial_speaker=triage.agent_id,
-        transitions=[], default_target=None)  # TODO: fill in
-    # Hint: use TransitionGraph.sequence([triage.agent_id, eng.agent_id])
+    triage = await hub.register(Agent("triage", prompt="Triage the request; route to eng if technical.", config=config))
+    eng = await hub.register(Agent("eng", prompt="Engineering specialist. One sentence.", config=config))
+    graph = TransitionGraph.sequence([triage.agent_id, eng.agent_id])
     channel = await triage.open(type="workflow", target=[eng.agent_id],
-        knobs={"graph": TransitionGraph.sequence([triage.agent_id, eng.agent_id]).to_dict()})
+        knobs={"graph": graph.to_dict()})
     await channel.send("The API is returning 500s.", audience=[eng.agent_id])
     await asyncio.sleep(20)
     await hub.close()
@@ -47,10 +61,21 @@ asyncio.run(main())</pre>
   <div class="card">
     <h2>Tasks</h2>
     <ol>
-      <li>Replace the empty graph with <code>TransitionGraph.sequence([...])</code>.</li>
-      <li>Add a tool on triage that returns <code>Handoff(target=eng.agent_id)</code> and observe dynamic routing.</li>
-      <li>End the workflow with a <code>Finish(summary=...)</code> tool.</li>
+      <li>Run it. Confirm the channel closes with reason <code>sequence_complete</code>.</li>
+      <li>Add a <code>@triage.tool</code> that returns <code>Handoff(target=eng.agent_id)</code> and observe dynamic routing.</li>
+      <li>Add a <code>@eng.tool</code> that returns <code>Finish(summary="done")</code> to terminate early.</li>
+      <li>Inspect <code>hub.adapter_state(channel_id)</code> to read <code>turn_count</code> and <code>context_vars</code>.</li>
     </ol>
+  </div>
+
+  <div class="card">
+    <h2>Key takeaways</h2>
+    <ul>
+      <li>Speaker order is data, not code — inspectable and serializable.</li>
+      <li><code>ToolCalled</code> and <code>Handoff</code> let tools drive routing.</li>
+      <li>Context variables (<code>ContextEquals</code>) enable conditional branching.</li>
+      <li>The graph round-trips through <code>TransitionGraph.to_dict()</code> for distributed use.</li>
+    </ul>
   </div>
 
   <div class="footer"><a href="lab2.html">← Lab 2</a> · <a href="index.html">Home</a></div>
