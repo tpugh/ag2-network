@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lab 2 — Round-Robin Discussion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jersey+10&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="frame">
+  <nav class="topnav"><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a><a href="lab1.html">Lab 1</a><a href="lab2.html">Lab 2</a><a href="lab3.html">Lab 3</a></nav>
+  <h1>Lab 2</h1>
+  <p style="color:var(--text-secondary);">Round-robin discussion with turn enforcement.</p>
+
+  <div class="card">
+    <h2>Objective</h2>
+    <p>Build a 3-agent discussion. Verify only the current speaker can send; others are blocked by the adapter.</p>
+  </div>
+
+  <div class="card">
+    <h2>Starter code</h2>
+    <pre># examples/labs/lab2.py
+import asyncio
+from ag2 import Agent
+from ag2.network import EV_TEXT, Hub
+from ag2.network.testing import MemoryKnowledgeStore
+from common import make_config
+
+async def main():
+    config = make_config()
+    hub = await Hub.open(MemoryKnowledgeStore(), ttl_sweep_interval=0)
+    a = await hub.register(Agent("optimist", prompt="You are an optimist.", config=config))
+    b = await hub.register(Agent("skeptic", prompt="You are a skeptic.", config=config))
+    c = await hub.register(Agent("pragmatist", prompt="You are a pragmatist.", config=config))
+    channel = await a.open(type="discussion", target=["skeptic", "pragmatist"])
+    await channel.send("Topic: microservices?", audience=[b.agent_id, c.agent_id])
+    await asyncio.sleep(15)
+    await channel.close(reason="done")
+    await asyncio.sleep(1)
+    wal = await hub.read_wal(channel.channel_id)
+    for env in wal:
+        if env.event_type == EV_TEXT:
+            print(env.sender_id[-6:], env.event_data["text"][:60])
+    await hub.close()
+asyncio.run(main())</pre>
+  </div>
+
+  <div class="card">
+    <h2>Tasks</h2>
+    <ol>
+      <li>Run it. Confirm the WAL shows alternating speakers.</li>
+      <li>Try sending from a non-current speaker manually. Observe <code>ProtocolError</code> / rejection.</li>
+      <li>Change <code>target</code> order and see how round-robin order changes.</li>
+    </ol>
+  </div>
+
+  <div class="footer"><a href="lab1.html">← Lab 1</a> · <a href="lab3.html">Lab 3 →</a></div>
+</div>
+</body>
+</html>

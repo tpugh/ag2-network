@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lab 3 — Workflow with Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jersey+10&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="frame">
+  <nav class="topnav"><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a><a href="lab1.html">Lab 1</a><a href="lab2.html">Lab 2</a><a href="lab3.html">Lab 3</a></nav>
+  <h1>Lab 3</h1>
+  <p style="color:var(--text-secondary);">Workflow with a TransitionGraph and a Handoff tool.</p>
+
+  <div class="card">
+    <h2>Objective</h2>
+    <p>Build a triage → specialist pipeline where a tool returns <code>Handoff(target=...)</code> to pick the next speaker dynamically.</p>
+  </div>
+
+  <div class="card">
+    <h2>Starter code</h2>
+    <pre># examples/labs/lab3.py
+import asyncio
+from ag2 import Agent
+from ag2.network import Hub, TransitionGraph, Handoff
+from ag2.network.testing import MemoryKnowledgeStore
+from common import make_config
+
+async def main():
+    config = make_config()
+    hub = await Hub.open(MemoryKnowledgeStore(), ttl_sweep_interval=0)
+    triage = await hub.register(Agent("triage", prompt="Triage the request.", config=config))
+    eng    = await hub.register(Agent("eng", prompt="Engineering specialist.", config=config))
+    graph = TransitionGraph(initial_speaker=triage.agent_id,
+        transitions=[], default_target=None)  # TODO: fill in
+    # Hint: use TransitionGraph.sequence([triage.agent_id, eng.agent_id])
+    channel = await triage.open(type="workflow", target=[eng.agent_id],
+        knobs={"graph": TransitionGraph.sequence([triage.agent_id, eng.agent_id]).to_dict()})
+    await channel.send("The API is returning 500s.", audience=[eng.agent_id])
+    await asyncio.sleep(20)
+    await hub.close()
+asyncio.run(main())</pre>
+  </div>
+
+  <div class="card">
+    <h2>Tasks</h2>
+    <ol>
+      <li>Replace the empty graph with <code>TransitionGraph.sequence([...])</code>.</li>
+      <li>Add a tool on triage that returns <code>Handoff(target=eng.agent_id)</code> and observe dynamic routing.</li>
+      <li>End the workflow with a <code>Finish(summary=...)</code> tool.</li>
+    </ol>
+  </div>
+
+  <div class="footer"><a href="lab2.html">← Lab 2</a> · <a href="index.html">Home</a></div>
+</div>
+</body>
+</html>
