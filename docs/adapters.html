@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Adapters — AG2 Network</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header><h1>AG2 Network</h1><nav><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a></nav></header>
+<div class="container">
+<div class="card">
+<h2>Channel Adapters</h2>
+<table style="width:100%;border-collapse:collapse">
+<tr><th style="text-align:left">Adapter</th><th>Participants</th><th>Turn order</th><th>Termination</th></tr>
+<tr><td>consulting</td><td>2</td><td>strict 1Q1R</td><td>auto-close after reply</td></tr>
+<tr><td>conversation</td><td>2</td><td>free-form</td><td>explicit close / TTL</td></tr>
+<tr><td>discussion</td><td>2+</td><td>round-robin</td><td>explicit close / TTL</td></tr>
+<tr><td>workflow</td><td>2+</td><td>TransitionGraph</td><td>graph terminates / max_turns</td></tr>
+</table>
+</div>
+<div class="card">
+<h2>Choosing</h2>
+<ul>
+<li><strong>consulting</strong> — strict Q&amp;A, auto-closes.</li>
+<li><strong>conversation</strong> — free-form chat.</li>
+<li><strong>discussion</strong> — round-robin multi-party.</li>
+<li><strong>workflow</strong> — declarative orchestration (GroupChat replacement).</li>
+</ul>
+<p>Workflow uses a <code>TransitionGraph</code> with targets (AgentTarget, TerminateTarget, …) and conditions (Always, FromSpeaker, ToolCalled, ContextEquals). Convenience factories: <code>TransitionGraph.sequence([...])</code>, <code>TransitionGraph.round_robin(participants=..., max_turns=...)</code>.</p>
+</div>
+</div>
+<footer><a href="index.html">← Home</a></footer>
+</body>
+</html>

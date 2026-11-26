@@ -1,0 +1,4 @@
+ag2>=1.3.1
+# Optional providers (pick one):
+# openai
+# anthropic

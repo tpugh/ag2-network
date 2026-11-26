@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Quick Start — AG2 Network</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header><h1>AG2 Network</h1><nav><a href="index.html">Home</a><a href="quickstart.html">Quick Start</a><a href="adapters.html">Adapters</a><a href="distributed.html">Distributed</a></nav></header>
+<div class="container">
+<div class="card">
+<h2>Quick Start</h2>
+<p>Smallest end-to-end network: one in-process hub, two agents, a consulting channel.</p>
+<pre>import asyncio
+from ag2 import Agent
+from ag2.network import EV_CHANNEL_CLOSED, EV_TEXT, Hub
+from ag2.network.testing import MemoryKnowledgeStore
+
+async def main():
+    hub = await Hub.open(MemoryKnowledgeStore(), ttl_sweep_interval=0)
+    alice = await hub.register(Agent("alice", prompt="Ask one focused question.", config=config))
+    bob   = await hub.register(Agent("bob",   prompt="Answer in one sentence.", config=config))
+    channel = await alice.open(type="consulting", target="bob")
+    await channel.send("What's the most important property of a distributed system?", audience=[bob.agent_id])
+    close_env = await alice.wait_for_channel_event(channel_id=channel.channel_id,
+        predicate=lambda e: e.event_type == EV_CHANNEL_CLOSED, timeout=60.0)
+    print("closed:", close_env.event_data.get("reason"))
+    wal = await hub.read_wal(channel.channel_id)
+    for env in wal:
+        if env.event_type == EV_TEXT:
+            speaker = "alice" if env.sender_id == alice.agent_id else "bob"
+            print(f"{speaker}: {env.event_data['text']}")
+    await hub.close()
+asyncio.run(main())</pre>
+<p>See <code>examples/01_quickstart_consulting.py</code> in the repo.</p>
+</div>
+<div class="card">
+<h2>Steps</h2>
+<ol>
+<li><code>Hub.open(store)</code> boots the hub.</li>
+<li><code>hub.register(agent)</code> attaches an agent, returns <code>AgentClient</code>.</li>
+<li><code>alice.open(type="consulting", target="bob")</code> creates the channel.</li>
+<li><code>channel.send(...)</code> posts an EV_TEXT envelope.</li>
+<li>Bob's default handler runs <code>Agent.ask</code> and replies.</li>
+<li>ConsultingAdapter auto-closes; <code>wait_for_channel_event</code> wakes.</li>
+<li><code>hub.read_wal</code> replays the transcript.</li>
+</ol>
+</div>
+</div>
+<footer><a href="index.html">← Home</a></footer>
+</body>
+</html>
